@@ -21,7 +21,10 @@ public:
 	void SetRelativeVector();
 	FVector GetLandmarkVector() const { return BoneLandmarkVector; }
 	FVector GetRelativeVector() const { return BoneRelativeVector; }
+
+	UFUNCTION(BlueprintCallable)
 	FRotator GetAdjacentRotation() const { return AdjacentRotation; }
+
 	UBoneTree* GetParent() const { return Parent; }
 	TArray<UBoneTree*> GetChildren() const { return Children; }
 

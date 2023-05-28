@@ -13,7 +13,7 @@ AMyCharacter::AMyCharacter()
 	Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("default"), false);
 	LandmarkVectors.Init(FVector(0, 0, 0), 33);
 
-	BoneRoot = UBoneTree::BuildBoneTree(BoneMap);
+	
 }
 
 AMyCharacter::~AMyCharacter()
@@ -125,7 +125,6 @@ void AMyCharacter::UpdateBoneTree()
 	if (CurrentBone)
 	{
 		CurrentBone->SetLandmarkVector(EstimatedPelvis);
-		CurrentBone->SetRelativeVector();
 	}
 
 	CurrentBone = BoneMap.FindRef(34);
@@ -147,26 +146,49 @@ void AMyCharacter::UpdateBoneTree()
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
 
 			int j = 0;
-			while (ParentBone && j < ChildBone.Num())
+			//while (ParentBone && j < ChildBone.Num())
+			//{
+			//	FRotator AdjacentRotation = GetRotatorfromVector(
+			//		ParentBone->GetLandmarkVector(),
+			//		CurrentBone->GetLandmarkVector(),
+			//		ChildBone[j]->GetLandmarkVector()
+			//	);
+			//	/* we need some changes in Rotation*/
+			//	UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %s "), i, *AdjacentRotation.ToString());
+			//	CurrentBone->SetAdjacentRotation(AdjacentRotation);
+
+			//	ParentBone = ParentBone->GetParent();
+			//	ChildBone = ParentBone ? ParentBone->GetChildren() : TArray<UBoneTree*>();
+			//	j++;
+			//}
+
+			if (ParentBone && 0 < ChildBone.Num())
 			{
 				FRotator AdjacentRotation = GetRotatorfromVector(
 					ParentBone->GetLandmarkVector(),
 					CurrentBone->GetLandmarkVector(),
-					ChildBone[j]->GetLandmarkVector()
+					ChildBone[0]->GetLandmarkVector()
 				);
-
+				/* we need some changes in Rotation*/
+				if( i == 12)
+				{
+					//UE_LOG(LogTemp, Error, TEXT("Landmark %d result : %s "), i, *AdjacentRotation.ToString());
+					/*this is for test code*/
+				}
+				
 				CurrentBone->SetAdjacentRotation(AdjacentRotation);
 
-				ParentBone = ParentBone->GetParent();
-				ChildBone = ParentBone ? ParentBone->GetChildren() : TArray<UBoneTree*>();
-				j++;
 			}
 
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken"), i);
+			UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %p "), i, CurrentBone);
+			
 		}
+
+		
+
 	}
 }
 
@@ -174,6 +196,8 @@ void AMyCharacter::UpdateBoneTree()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	BoneRoot = UBoneTree::BuildBoneTree(BoneMap);
 }
 
 void AMyCharacter::Tick(float DeltaTime)
@@ -188,7 +212,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
-	FVector StarttoJoint = JointVector - StartVector;
+	FVector StarttoJoint = StartVector - JointVector;
 	FVector JointtoEnd = EndVector - JointVector;
 
 	//this is for  X - axis Rotator angle calculator

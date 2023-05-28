@@ -36,7 +36,8 @@ void UBoneTree::SetAdjacentRotation(FRotator adjacentRotation)
 
 void UBoneTree::SetRelativeVector()
 {
-	this->BoneRelativeVector = this->BoneLandmarkVector - this->Parent->BoneLandmarkVector;
+	
+	this->BoneRelativeVector = this->GetLandmarkVector() - this->Parent->GetLandmarkVector();
 }
 
 UBoneTree* UBoneTree::CreateUBoneTreeObject(UBoneTree* parent, FVector landmarkVector)
