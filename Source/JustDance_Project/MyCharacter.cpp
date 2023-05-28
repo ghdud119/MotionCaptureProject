@@ -170,9 +170,10 @@ void AMyCharacter::UpdateBoneTree()
 					ChildBone[0]->GetLandmarkVector()
 				);
 				/* we need some changes in Rotation*/
-				if( i == 12)
+				if( i == 11)
 				{
-					//UE_LOG(LogTemp, Error, TEXT("Landmark %d result : %s "), i, *AdjacentRotation.ToString());
+					
+					GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone11 : %s"), *AdjacentRotation.ToString()));
 					/*this is for test code*/
 				}
 				
@@ -183,7 +184,7 @@ void AMyCharacter::UpdateBoneTree()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %p "), i, CurrentBone);
+			//UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %p "), i, CurrentBone);
 			
 		}
 
@@ -212,39 +213,54 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
-	FVector StarttoJoint = StartVector - JointVector;
-	FVector JointtoEnd = EndVector - JointVector;
+	FVector tmpStarttoJoint = StartVector - JointVector;
+	FVector tmpJointtoEnd = EndVector - JointVector;
 
-	//this is for  X - axis Rotator angle calculator
-	FVector tmp1 = StarttoJoint;
-	tmp1.X = 0.0f;
-	FVector tmp2 = JointtoEnd;
-	tmp2.X = 0.0f;
+	FVector StarttoJoint = ChangeCoordinate(tmpStarttoJoint);
+	FVector JointtoEnd = ChangeCoordinate(tmpJointtoEnd);
 
-	float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
-	float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));
+	//below this is old thing.. 
+	////this is for  X - axis Rotator angle calculator
+	//FVector tmp1 = StarttoJoint;
+	//tmp1.X = 0.0f;
+	//FVector tmp2 = JointtoEnd;
+	//tmp2.X = 0.0f;
 
-	//this is for  Y - axis Rotator angle calculator
-	FVector tmp3 = StarttoJoint;
-	tmp3.Y = 0.0f;
-	FVector tmp4 = JointtoEnd;
-	tmp4.Y = 0.0f;
+	//float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
+	//float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));
 
-	float cosineY = FVector::DotProduct(tmp3, tmp4) / tmp3.Size() * tmp4.Size();
-	float RotatorY = FMath::RadiansToDegrees(FMath::Acos(cosineY));
+	////this is for  Y - axis Rotator angle calculator
+	//FVector tmp3 = StarttoJoint;
+	//tmp3.Y = 0.0f;
+	//FVector tmp4 = JointtoEnd;
+	//tmp4.Y = 0.0f;
 
-	//this is for  Z - axis Rotator angle calculator
-	FVector tmp5 = StarttoJoint;
-	tmp5.Z = 0.0f;
-	FVector tmp6 = JointtoEnd;
-	tmp6.Z = 0.0f;
+	//float cosineY = FVector::DotProduct(tmp3, tmp4) / tmp3.Size() * tmp4.Size();
+	//float RotatorY = FMath::RadiansToDegrees(FMath::Acos(cosineY));
 
-	float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
-	float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
+	////this is for  Z - axis Rotator angle calculator
+	//FVector tmp5 = StarttoJoint;
+	//tmp5.Z = 0.0f;
+	//FVector tmp6 = JointtoEnd;
+	//tmp6.Z = 0.0f;
+
+	//float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
+	//float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
+	
+	FRotator Rotator = JointtoEnd.Rotation();
 
 
 
 
+	return Rotator;
+}
 
-	return FRotator(RotatorX, RotatorY, RotatorZ);
+FVector AMyCharacter::ChangeCoordinate(FVector changeVector)
+{
+	float nX = changeVector.Y * -1;
+	float nY = changeVector.X;
+	float nZ = changeVector.Z ;
+
+	
+	return FVector(nX,nY,nZ);
 }

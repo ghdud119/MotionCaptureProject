@@ -33,6 +33,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DataProcessing")
 	FRotator GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector);
 
+	FVector ChangeCoordinate(FVector changeVector);
+
 protected:
 	virtual void BeginPlay() override;
 
