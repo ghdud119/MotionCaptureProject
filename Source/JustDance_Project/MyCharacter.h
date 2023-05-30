@@ -35,6 +35,9 @@ public:
 
 	FVector ChangeCoordinate(FVector changeVector);
 
+	UFUNCTION(BlueprintCallable, Category = "Debugging")
+	void DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition);
+
 protected:
 	virtual void BeginPlay() override;
 

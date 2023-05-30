@@ -146,21 +146,6 @@ void AMyCharacter::UpdateBoneTree()
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
 
 			int j = 0;
-			//while (ParentBone && j < ChildBone.Num())
-			//{
-			//	FRotator AdjacentRotation = GetRotatorfromVector(
-			//		ParentBone->GetLandmarkVector(),
-			//		CurrentBone->GetLandmarkVector(),
-			//		ChildBone[j]->GetLandmarkVector()
-			//	);
-			//	/* we need some changes in Rotation*/
-			//	UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %s "), i, *AdjacentRotation.ToString());
-			//	CurrentBone->SetAdjacentRotation(AdjacentRotation);
-
-			//	ParentBone = ParentBone->GetParent();
-			//	ChildBone = ParentBone ? ParentBone->GetChildren() : TArray<UBoneTree*>();
-			//	j++;
-			//}
 
 			if (ParentBone && 0 < ChildBone.Num())
 			{
@@ -203,6 +188,10 @@ void AMyCharacter::BeginPlay()
 
 void AMyCharacter::Tick(float DeltaTime)
 {
+	UBoneTree* Pelvis = BoneMap.FindRef(33);
+	DrawDebugBones(BoneRoot, {0,0,0});
+
+
 	Super::Tick(DeltaTime);
 }
 
@@ -265,3 +254,32 @@ FVector AMyCharacter::ChangeCoordinate(FVector changeVector)
 	
 	return FVector(nX,nY,nZ);
 }
+
+void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition)
+{
+	UWorld* World = GetWorld();
+	if (World != nullptr)
+	{
+		const float Radius = 10.0f;
+		const FColor Color = FColor::Red;
+		const float LifeTime = 0.3f;
+
+		FVector BonePosition = ParentPosition + Bone->GetRelativeVector() * 100;
+
+		DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
+
+		// 로테이션 값을 방향 벡터로 변환
+		FVector Direction = Bone->GetAdjacentRotation().Vector();
+
+		// 디버그 라인 그리기
+		FVector LineEnd = BonePosition + Direction.Normalize() * 100.0f; 
+		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
+
+		// 자식 본들에 대해 재귀적으로 호출
+		for (UBoneTree* Child : Bone->GetChildren())
+		{
+			DrawDebugBones(Child, BonePosition);
+		}
+	}
+}
+
