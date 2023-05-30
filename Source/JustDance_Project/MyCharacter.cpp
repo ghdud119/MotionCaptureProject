@@ -247,6 +247,7 @@ FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVe
 	//float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
 	//float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
 	
+	/*maybe this is right thing.. you have to change coordinate transformation*/
 	FRotator Rotator = JointtoEnd.Rotation();
 
 
