@@ -94,7 +94,7 @@ UBoneTree* UBoneTree::BuildBoneTree(TMap<int32, UBoneTree*>& BoneMap)
 	// 업데이트를 위한 맵 생성
 	BoneMap.Add(33, Pelvis);
 	BoneMap.Add(34, spine_03);
-	BoneMap.Add(0, head);
+	BoneMap.Add(10, head);
 	BoneMap.Add(11, upperarm_r);
 	BoneMap.Add(12, upperarm_l);
 	BoneMap.Add(13, lowerarm_r);

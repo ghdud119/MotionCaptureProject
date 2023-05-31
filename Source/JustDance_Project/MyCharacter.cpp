@@ -121,31 +121,29 @@ void AMyCharacter::UpdateBoneTree()
 
 	UBoneTree* CurrentBone = nullptr;
 
-	CurrentBone = BoneMap.FindRef(33);
-	if (CurrentBone)
-	{
-		CurrentBone->SetLandmarkVector(EstimatedPelvis);
-	}
-
-	CurrentBone = BoneMap.FindRef(34);
-	if (CurrentBone)
-	{
-		CurrentBone->SetLandmarkVector(EsitmatedSpine_03);
-		CurrentBone->SetRelativeVector();
-	}
-
 	for (int i = 0; i < LandmarkVectors.Num(); i++)
 	{
 		CurrentBone = BoneMap.FindRef(i);
+
 		if (CurrentBone)
 		{
-			CurrentBone->SetLandmarkVector(LandmarkVectors[i]);
+			if (i == 33)
+			{
+				CurrentBone->SetLandmarkVector(EstimatedPelvis);
+			}
+			else if (i == 34)
+			{
+				CurrentBone->SetLandmarkVector(EsitmatedSpine_03);
+			}
+			else
+			{
+				CurrentBone->SetLandmarkVector(LandmarkVectors[i]);
+			}
+
 			CurrentBone->SetRelativeVector();
 
 			UBoneTree* ParentBone = CurrentBone->GetParent();
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
-
-			int j = 0;
 
 			if (ParentBone && 0 < ChildBone.Num())
 			{
@@ -154,29 +152,24 @@ void AMyCharacter::UpdateBoneTree()
 					CurrentBone->GetLandmarkVector(),
 					ChildBone[0]->GetLandmarkVector()
 				);
-				/* we need some changes in Rotation*/
-				if( i == 11)
+
+				if (i == 11)
 				{
-					
 					GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone11 : %s"), *AdjacentRotation.ToString()));
-					/*this is for test code*/
 				}
-				
+
 				CurrentBone->SetAdjacentRotation(AdjacentRotation);
-
 			}
-
 		}
 		else
 		{
 			//UE_LOG(LogTemp, Error, TEXT("Landmark %d is broken : %p "), i, CurrentBone);
-			
 		}
 
-		
-
+		LandmarksUpdated = true;
 	}
 }
+
 
 
 void AMyCharacter::BeginPlay()
@@ -191,6 +184,14 @@ void AMyCharacter::Tick(float DeltaTime)
 	UBoneTree* Pelvis = BoneMap.FindRef(33);
 	DrawDebugBones(BoneRoot, {0,0,0});
 
+	if (LandmarksUpdated)
+	{
+		// Print the landmark vectors to file
+		DebugPrintDataToFile();
+
+		// Reset the flag
+		LandmarksUpdated = false;
+	}
 
 	Super::Tick(DeltaTime);
 }
@@ -269,10 +270,10 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 		DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
 
 		// 로테이션 값을 방향 벡터로 변환
-		FVector Direction = Bone->GetAdjacentRotation().Vector();
+		FVector Direction = Bone->GetRelativeVector();
 
 		// 디버그 라인 그리기
-		FVector LineEnd = BonePosition + Direction.Normalize() * 100.0f; 
+		FVector LineEnd = BonePosition + Direction * 100.0f; 
 		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
 
 		// 자식 본들에 대해 재귀적으로 호출
@@ -280,6 +281,51 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 		{
 			DrawDebugBones(Child, BonePosition);
 		}
+
 	}
+}
+
+void AMyCharacter::DebugPrintDataToFile()
+{
+	FString Content = "";
+
+	// Get current time
+	FDateTime Now = FDateTime::UtcNow();
+
+	// Convert the current time to string
+	FString Timestamp = Now.ToString();
+
+	// 랜드마크 벡터를 저장하는 루프
+	for (int i = 0; i < LandmarkVectors.Num(); i++)
+	{
+		FVector LandmarkVector = LandmarkVectors[i];
+
+		Content += FString::Printf(TEXT("[%s] Landmark %d: X=%f, Y=%f, Z=%f\n"),
+			*Timestamp,
+			i,
+			LandmarkVector.X,
+			LandmarkVector.Y,
+			LandmarkVector.Z);
+	}
+
+	Content += FString::Printf(TEXT("\nCharacter LandMark Done \n Bonetree Data Start\n\n"));
+
+	UBoneTree* CurrentBoneTree = nullptr;
+	for (int i = 0; i < 35; i++)
+	{
+		if ((9 < i && i < 17) || (22 < i && i < 29) || (32 < i && i < 35))
+		{
+			CurrentBoneTree = BoneMap.FindRef(i);
+
+			Content += FString::Printf(TEXT("[%s] BoneMap Number: %d\n"), *Timestamp, i);
+			Content += FString::Printf(TEXT("[%s] Landmark Vector: %s\n"), *Timestamp, *CurrentBoneTree->GetLandmarkVector().ToString());
+			Content += FString::Printf(TEXT("[%s] Relative Vector: %s\n"), *Timestamp, *CurrentBoneTree->GetRelativeVector().ToString());
+			Content += FString::Printf(TEXT("[%s] Rotation: %s\n"), *Timestamp, *CurrentBoneTree->GetAdjacentRotation().ToString());
+			Content += FString::Printf(TEXT("\n"));
+		}
+	}
+
+	// 텍스트를 파일로 저장
+	FFileHelper::SaveStringToFile(Content, TEXT("D:\\Desktop\\LandmarkVectorsData.txt"));
 }
 

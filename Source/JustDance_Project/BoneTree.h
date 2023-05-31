@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "UObject/NoExportTypes.h"
 #include "BoneTree.generated.h"
 
@@ -24,6 +26,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FRotator GetAdjacentRotation() const { return AdjacentRotation; }
+
 
 	UBoneTree* GetParent() const { return Parent; }
 	TArray<UBoneTree*> GetChildren() const { return Children; }

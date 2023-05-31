@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
@@ -60,9 +62,13 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 		TMap<int32, UBoneTree*> BoneMap;
+
+	//for Debug Print
+	void DebugPrintDataToFile();
 	
 
 private:
 	FSocket* Socket = nullptr;
 	UBoneTree* BoneRoot = nullptr;
+	bool LandmarksUpdated = false;
 };
