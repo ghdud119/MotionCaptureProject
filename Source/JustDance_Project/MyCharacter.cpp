@@ -131,9 +131,9 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("z") * -1;
+					float X = LandmarkObject->GetNumberField("z") * 0.05;
 					float Y = LandmarkObject->GetNumberField("x");
-					float Z = LandmarkObject->GetNumberField("y") * -1;
+					float Z = (LandmarkObject->GetNumberField("y") * -1) + 2.0f;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
 
 					LandmarkVectors[Num] = FVector(X, Y, Z);
@@ -260,7 +260,7 @@ double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
 	FVector tmpStarttoJoint = StartVector - JointVector;
-	FVector JointtoEnd = EndVector - JointVector;
+	FVector JointtoEnd = JointVector - EndVector;
 
 	
 
