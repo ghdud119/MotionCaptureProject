@@ -3,10 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
 class UInputComponent;
+class UBoneTree;
 
 UCLASS()
 class JUSTDANCE_PROJECT_API AMyCharacter : public ACharacter
@@ -14,8 +17,9 @@ class JUSTDANCE_PROJECT_API AMyCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AMyCharacter();
+	~AMyCharacter();
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Networking")
 		bool Connect(FString Host, int32 Port);
@@ -26,6 +30,31 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Networking")
 		bool ReceiveData(TArray<float>& OutData);
 
+	UFUNCTION(BlueprintCallable, Category = "DataProcessing")
+	void UpdateBoneTree();
+
+	UFUNCTION(BlueprintCallable, Category = "DataProcessing")
+	FRotator GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector);
+
+	FVector ChangeCoordinate(FVector changeVector);
+
+	UFUNCTION(BlueprintCallable, Category = "Debugging")
+	void DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition);
+	
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> CurAISkeletalMesh;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Ref")
+	TSubclassOf<AMyCharacter> RefAIClass;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="GmSocket")
+	TArray<FName> GmAllSockets;
+
+	UFUNCTION(BlueprintCallable)
+	void GmGetAllSocketNames();
+
+	UFUNCTION(BlueprintCallable)
+	bool GmCompareValues(float ErrorT = 1);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector Loc_Head;
@@ -104,9 +133,22 @@ public:
 	UFUNCTION(BlueprintCallable)
 	double TestFunc(FVector AnyVA, FVector AnyVB);
 
+	UPROPERTY(BlueprintReadOnly)
+	FVector EstimatedPelvis;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector EsitmatedSpine_03;
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<int32, UBoneTree*> BoneMap;
+
+	void DebugPrintDataToFile();
+
+
 private:
 	FSocket* Socket = nullptr;
-
+	UBoneTree* BoneRoot = nullptr;
+	bool LandmarksUpdated = false;
 	
 };
 
