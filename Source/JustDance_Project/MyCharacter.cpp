@@ -6,7 +6,7 @@
 #include "SocketSubsystem.h"
 #include "JsonUtilities/Public/JsonObjectConverter.h"
 #include "BoneTree.h"
-#include "Kismet/GameplayStatics.h"
+
 
 AMyCharacter::AMyCharacter()
 {
@@ -63,50 +63,7 @@ void AMyCharacter::Disconnect()
 		Socket = nullptr;
 	}
 }
-void AMyCharacter::GmGetAllSocketNames()
-{
-    TArray<FName> a = GetMesh()->GetAllSocketNames();
-      
-    GmAllSockets.Empty(0);
-      
-    for (auto Element : a)
-    {
-        GmAllSockets.AddUnique(Element);
-    }
 
-    CurAISkeletalMesh = Cast<AMyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), RefAIClass))->GetMesh();
-
-}
-
-bool AMyCharacter::GmCompareValues(float ErrorT)
-{
-    bool bResult = true;
-    
-    if(!GmAllSockets.IsEmpty())
-    {
-        FTransform CurRootTransform = GetMesh()->GetSocketTransform(GmAllSockets[0], RTS_World);
-        FTransform CurRootTransform2 = CurAISkeletalMesh->GetSocketTransform(GmAllSockets[0], RTS_World);
-        
-        for (int i = 1;  i < GmAllSockets.Num() - 1; i++)
-        {
-            FVector OutVec;
-            FRotator OutRot;
-            GetMesh()->TransformToBoneSpace(GmAllSockets[i], CurRootTransform.GetLocation(), CurRootTransform.Rotator(), OutVec, OutRot);
-
-        
-            FVector OutVec2;
-            FRotator OutRot2;
-            CurAISkeletalMesh->TransformToBoneSpace(GmAllSockets[i], CurRootTransform2.GetLocation(), CurRootTransform2.Rotator(), OutVec2, OutRot2);
-
-            if (!FMath::IsNearlyEqual(OutVec.Size()+OutRot.Vector().Size(), OutVec2.Size()+OutRot2.Vector().Size(), ErrorT))
-            {
-                bResult = false;
-            }
-        }
-    }
-
-    return bResult;
-}
 bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 {
 	if (Socket)
@@ -248,14 +205,7 @@ void AMyCharacter::PlayAIMontage(UAnimMontage* AnyMtg)
 {
     PlayAnimMontage(AnyMtg);
 }
-double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
-{    double RstA = AnyVA.Size();
-    double RstB = AnyVB.Size();
 
-    double Result;
-    return Result = RstA>RstB ? RstB-RstA : RstA-RstB;
-    
-}
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
