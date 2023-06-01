@@ -6,6 +6,7 @@
 #include "SocketSubsystem.h"
 #include "JsonUtilities/Public/JsonObjectConverter.h"
 #include "BoneTree.h"
+#include "Kismet/GameplayStatics.h"
 
 AMyCharacter::AMyCharacter()
 {
@@ -62,7 +63,50 @@ void AMyCharacter::Disconnect()
 		Socket = nullptr;
 	}
 }
+void AMyCharacter::GmGetAllSocketNames()
+{
+    TArray<FName> a = GetMesh()->GetAllSocketNames();
+      
+    GmAllSockets.Empty(0);
+      
+    for (auto Element : a)
+    {
+        GmAllSockets.AddUnique(Element);
+    }
 
+    CurAISkeletalMesh = Cast<AMyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), RefAIClass))->GetMesh();
+
+}
+
+bool AMyCharacter::GmCompareValues(float ErrorT)
+{
+    bool bResult = true;
+    
+    if(!GmAllSockets.IsEmpty())
+    {
+        FTransform CurRootTransform = GetMesh()->GetSocketTransform(GmAllSockets[0], RTS_World);
+        FTransform CurRootTransform2 = CurAISkeletalMesh->GetSocketTransform(GmAllSockets[0], RTS_World);
+        
+        for (int i = 1;  i < GmAllSockets.Num() - 1; i++)
+        {
+            FVector OutVec;
+            FRotator OutRot;
+            GetMesh()->TransformToBoneSpace(GmAllSockets[i], CurRootTransform.GetLocation(), CurRootTransform.Rotator(), OutVec, OutRot);
+
+        
+            FVector OutVec2;
+            FRotator OutRot2;
+            CurAISkeletalMesh->TransformToBoneSpace(GmAllSockets[i], CurRootTransform2.GetLocation(), CurRootTransform2.Rotator(), OutVec2, OutRot2);
+
+            if (!FMath::IsNearlyEqual(OutVec.Size()+OutRot.Vector().Size(), OutVec2.Size()+OutRot2.Vector().Size(), ErrorT))
+            {
+                bResult = false;
+            }
+        }
+    }
+
+    return bResult;
+}
 bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 {
 	if (Socket)
@@ -200,6 +244,18 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
+void AMyCharacter::PlayAIMontage(UAnimMontage* AnyMtg)
+{
+    PlayAnimMontage(AnyMtg);
+}
+double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
+{    double RstA = AnyVA.Size();
+    double RstB = AnyVB.Size();
+
+    double Result;
+    return Result = RstA>RstB ? RstB-RstA : RstA-RstB;
+    
+}
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
@@ -269,14 +325,14 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 
 		DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
 
-		// ∑Œ≈◊¿Ãº« ∞™¿ª πÊ«‚ ∫§≈Õ∑Œ ∫Ø»Ø
+		// Î°úÌÖåÏù¥ÏÖò Í∞íÏùÑ Î∞©Ìñ• Î≤°ÌÑ∞Î°ú Î≥ÄÌôò
 		FVector Direction = Bone->GetRelativeVector();
 
-		// µπˆ±◊ ∂Û¿Œ ±◊∏Æ±‚
+		// ÎîîÎ≤ÑÍ∑∏ ÎùºÏù∏ Í∑∏Î¶¨Í∏∞
 		FVector LineEnd = BonePosition + Direction * 100.0f; 
 		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
 
-		// ¿⁄Ωƒ ∫ªµÈø° ¥Î«ÿ ¿Á±Õ¿˚¿∏∑Œ »£√‚
+		// ÏûêÏãù Î≥∏Îì§Ïóê ÎåÄÌï¥ Ïû¨Í∑ÄÏ†ÅÏúºÎ°ú Ìò∏Ï∂ú
 		for (UBoneTree* Child : Bone->GetChildren())
 		{
 			DrawDebugBones(Child, BonePosition);
@@ -295,7 +351,7 @@ void AMyCharacter::DebugPrintDataToFile()
 	// Convert the current time to string
 	FString Timestamp = Now.ToString();
 
-	// ∑£µÂ∏∂≈© ∫§≈Õ∏¶ ¿˙¿Â«œ¥¬ ∑Á«¡
+	// ÎûúÎìúÎßàÌÅ¨ Î≤°ÌÑ∞Î•º Ï†ÄÏû•ÌïòÎäî Î£®ÌîÑ
 	for (int i = 0; i < LandmarkVectors.Num(); i++)
 	{
 		FVector LandmarkVector = LandmarkVectors[i];
@@ -325,7 +381,7 @@ void AMyCharacter::DebugPrintDataToFile()
 		}
 	}
 
-	// ≈ÿΩ∫∆Æ∏¶ ∆ƒ¿œ∑Œ ¿˙¿Â
+	// ÌÖçÏä§Ìä∏Î•º ÌååÏùºÎ°ú Ï†ÄÏû•
 	FFileHelper::SaveStringToFile(Content, TEXT("D:\\Desktop\\LandmarkVectorsData.txt"));
 }
 
