@@ -180,6 +180,7 @@ void AMyCharacter::UpdateBoneTree()
 				CurrentBone->SetLandmarkVector(EstimatedPelvis);
 
 				FString string = EstimatedPelvis.ToString();
+				GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("bond 33:%d"), *string));
 				
 			}
 			else if (i == 34)
