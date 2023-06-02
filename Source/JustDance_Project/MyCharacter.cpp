@@ -7,6 +7,7 @@
 #include "JsonUtilities/Public/JsonObjectConverter.h"
 #include "BoneTree.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AMyCharacter::AMyCharacter()
 {
@@ -131,7 +132,7 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("z") * 0.05;
+					float X = LandmarkObject->GetNumberField("z") * -0.05;
 					float Y = LandmarkObject->GetNumberField("x");
 					float Z = (LandmarkObject->GetNumberField("y") * -1) + 2.0f;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
@@ -259,41 +260,42 @@ double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
-	FVector tmpStarttoJoint = StartVector - JointVector;
-	FVector JointtoEnd = JointVector - EndVector;
+	FVector StarttoJoint = StartVector - JointVector;
+	FVector JointtoEnd = EndVector - JointVector;
 
-	
+	StarttoJoint.Normalize();
+	JointtoEnd.Normalize();
 
 	//below this is old thing.. 
 	////this is for  X - axis Rotator angle calculator
-	//FVector tmp1 = StarttoJoint;
-	//tmp1.X = 0.0f;
-	//FVector tmp2 = JointtoEnd;
-	//tmp2.X = 0.0f;
+	/*FVector tmp1 = 10*StarttoJoint;
+	tmp1.X = 0.0f;
+	FVector tmp2 = 10*JointtoEnd;
+	tmp2.X = 0.0f;*/
 
-	//float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
-	//float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));
+	/*float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
+	float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));*/
 
 	////this is for  Y - axis Rotator angle calculator
-	//FVector tmp3 = StarttoJoint;
+	//FVector tmp3 = 10*StarttoJoint;
 	//tmp3.Y = 0.0f;
-	//FVector tmp4 = JointtoEnd;
+	//FVector tmp4 = 10*JointtoEnd;
 	//tmp4.Y = 0.0f;
 
 	//float cosineY = FVector::DotProduct(tmp3, tmp4) / tmp3.Size() * tmp4.Size();
 	//float RotatorY = FMath::RadiansToDegrees(FMath::Acos(cosineY));
 
-	////this is for  Z - axis Rotator angle calculator
-	//FVector tmp5 = StarttoJoint;
+	//////this is for  Z - axis Rotator angle calculator
+	//FVector tmp5 = 10*StarttoJoint;
 	//tmp5.Z = 0.0f;
-	//FVector tmp6 = JointtoEnd;
+	//FVector tmp6 = 10*JointtoEnd;
 	//tmp6.Z = 0.0f;
 
 	//float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
 	//float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
-	
+
 	/*maybe this is right thing.. you have to change coordinate transformation*/
-	FRotator Rotator = JointtoEnd.Rotation();
+	FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(StarttoJoint, JointtoEnd);
 
 
 
