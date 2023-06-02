@@ -166,8 +166,11 @@ void AMyCharacter::UpdateBoneTree()
 
 	UBoneTree* CurrentBone = nullptr;
 
-	for (int i = 0; i < LandmarkVectors.Num(); i++)
+	for (int i = 0; i < (LandmarkVectors.Num() + 2); i++)
 	{
+
+
+
 		CurrentBone = BoneMap.FindRef(i);
 
 		if (CurrentBone)
@@ -175,6 +178,10 @@ void AMyCharacter::UpdateBoneTree()
 			if (i == 33)
 			{
 				CurrentBone->SetLandmarkVector(EstimatedPelvis);
+
+				FString string = EstimatedPelvis.ToString();
+				GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone33 ")));
+				
 			}
 			else if (i == 34)
 			{
@@ -198,10 +205,7 @@ void AMyCharacter::UpdateBoneTree()
 					ChildBone[0]->GetLandmarkVector()
 				);
 
-				if (i == 11)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone11 : %s"), *AdjacentRotation.ToString()));
-				}
+				
 
 				CurrentBone->SetAdjacentRotation(AdjacentRotation);
 			}
@@ -260,41 +264,13 @@ double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
-	FVector StarttoJoint = StartVector - JointVector;
+	FVector StarttoJoint = JointVector - StartVector;
 	FVector JointtoEnd = EndVector - JointVector;
 
 	StarttoJoint.Normalize();
 	JointtoEnd.Normalize();
 
-	//below this is old thing.. 
-	////this is for  X - axis Rotator angle calculator
-	/*FVector tmp1 = 10*StarttoJoint;
-	tmp1.X = 0.0f;
-	FVector tmp2 = 10*JointtoEnd;
-	tmp2.X = 0.0f;*/
 
-	/*float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
-	float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));*/
-
-	////this is for  Y - axis Rotator angle calculator
-	//FVector tmp3 = 10*StarttoJoint;
-	//tmp3.Y = 0.0f;
-	//FVector tmp4 = 10*JointtoEnd;
-	//tmp4.Y = 0.0f;
-
-	//float cosineY = FVector::DotProduct(tmp3, tmp4) / tmp3.Size() * tmp4.Size();
-	//float RotatorY = FMath::RadiansToDegrees(FMath::Acos(cosineY));
-
-	//////this is for  Z - axis Rotator angle calculator
-	//FVector tmp5 = 10*StarttoJoint;
-	//tmp5.Z = 0.0f;
-	//FVector tmp6 = 10*JointtoEnd;
-	//tmp6.Z = 0.0f;
-
-	//float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
-	//float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
-
-	/*maybe this is right thing.. you have to change coordinate transformation*/
 	FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(StarttoJoint, JointtoEnd);
 
 
