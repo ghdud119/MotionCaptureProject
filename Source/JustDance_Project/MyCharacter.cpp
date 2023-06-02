@@ -132,8 +132,8 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("z") * -0.05;
-					float Y = LandmarkObject->GetNumberField("x");
+					float X = LandmarkObject->GetNumberField("x") ;
+					float Y = LandmarkObject->GetNumberField("z") * -0.05;
 					float Z = (LandmarkObject->GetNumberField("y") * -1) + 2.0f;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
 
@@ -180,7 +180,6 @@ void AMyCharacter::UpdateBoneTree()
 				CurrentBone->SetLandmarkVector(EstimatedPelvis);
 
 				FString string = EstimatedPelvis.ToString();
-				GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone33 ")));
 				
 			}
 			else if (i == 34)
@@ -190,15 +189,26 @@ void AMyCharacter::UpdateBoneTree()
 			else
 			{
 				CurrentBone->SetLandmarkVector(LandmarkVectors[i]);
+				CurrentBone->SetRelativeVector();
+				
 			}
 
-			CurrentBone->SetRelativeVector();
-
+			
 			UBoneTree* ParentBone = CurrentBone->GetParent();
+			
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
 
-			if (ParentBone && 0 < ChildBone.Num())
+			if (ParentBone && i != 33 && i != 34 && 0 < ChildBone.Num())
 			{
+				if (i == 11 || i == 12)
+				{
+					FRotator AdjacentRotation = GetRotatorfromVector(
+						ShoulderCenter,
+						CurrentBone->GetLandmarkVector(),
+						ChildBone[0]->GetLandmarkVector());
+				}
+
+
 				FRotator AdjacentRotation = GetRotatorfromVector(
 					ParentBone->GetLandmarkVector(),
 					CurrentBone->GetLandmarkVector(),
