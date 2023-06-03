@@ -90,6 +90,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DataProcessing")
 	FRotator GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector);
 
+	UFUNCTION(BlueprintCallable, Category = "DataProcessing")
+	FRotator GetRotatorfromRelativeVector(FVector RelatedfromParents);
+
+
 	FVector ChangeCoordinate(FVector changeVector);
 
 	UFUNCTION(BlueprintCallable, Category = "Debugging")

@@ -132,8 +132,8 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("x") ;
-					float Y = LandmarkObject->GetNumberField("z") * -0.05;
+					float X = LandmarkObject->GetNumberField("z") * -1;
+					float Y = LandmarkObject->GetNumberField("x") ;
 					float Z = (LandmarkObject->GetNumberField("y") * -1) + 2.0f;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
 
@@ -199,26 +199,28 @@ void AMyCharacter::UpdateBoneTree()
 			
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
 
-			if (ParentBone && i != 33 && i != 34 && 0 < ChildBone.Num())
+			if (ParentBone && i != 33 && i != 34 )
 			{
 				if (i == 11 || i == 12)
 				{
-					FRotator AdjacentRotation = GetRotatorfromVector(
+					/*FRotator AdjacentRotation = GetRotatorfromVector(
 						ShoulderCenter,
 						CurrentBone->GetLandmarkVector(),
-						ChildBone[0]->GetLandmarkVector());
+						ChildBone[0]->GetLandmarkVector());*/
 				}
 
 
-				FRotator AdjacentRotation = GetRotatorfromVector(
+				/*FRotator AdjacentRotation = GetRotatorfromVector(
 					ParentBone->GetLandmarkVector(),
 					CurrentBone->GetLandmarkVector(),
 					ChildBone[0]->GetLandmarkVector()
-				);
+				);*/
 
+
+				FRotator AdjacentRotation = GetRotatorfromRelativeVector(CurrentBone->GetRelativeVector());
 				
 
-				CurrentBone->SetAdjacentRotation(AdjacentRotation);
+				CurrentBone->GetParent()->SetAdjacentRotation(AdjacentRotation);
 			}
 		}
 		else
@@ -282,10 +284,18 @@ FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVe
 	JointtoEnd.Normalize();
 
 
-	FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(StarttoJoint, JointtoEnd);
+	FRotator Rotator = JointtoEnd.Rotation();
+	//FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(StarttoJoint, JointtoEnd);
 
 
 
+
+	return Rotator;
+}
+
+FRotator AMyCharacter::GetRotatorfromRelativeVector(FVector RelatedfromParents)
+{
+	FRotator Rotator = RelatedfromParents.Rotation();
 
 	return Rotator;
 }
@@ -315,9 +325,13 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 
 		// 로테이션 값을 방향 벡터로 변환
 		FVector Direction = Bone->GetRelativeVector();
+		FRotator tmpDirection2 = Bone->GetAdjacentRotation();
+		FVector DirectionVector = tmpDirection2.Vector();
+
+		
 
 		// 디버그 라인 그리기
-		FVector LineEnd = BonePosition + Direction * 100.0f; 
+		FVector LineEnd = BonePosition - Direction * 100.0f;
 		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
 
 		// 자식 본들에 대해 재귀적으로 호출
@@ -370,6 +384,6 @@ void AMyCharacter::DebugPrintDataToFile()
 	}
 
 	// 텍스트를 파일로 저장
-	FFileHelper::SaveStringToFile(Content, TEXT("D:\\Desktop\\LandmarkVectorsData.txt"));
+	FFileHelper::SaveStringToFile(Content, TEXT("D:\\study-git\\debug\\LandmarkVectorsData.txt"));
 }
 

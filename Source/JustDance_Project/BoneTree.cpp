@@ -95,12 +95,12 @@ UBoneTree* UBoneTree::BuildBoneTree(TMap<int32, UBoneTree*>& BoneMap)
 	BoneMap.Add(33, Pelvis);
 	BoneMap.Add(34, spine_03);
 	BoneMap.Add(10, head);
-	BoneMap.Add(11, upperarm_r);
-	BoneMap.Add(12, upperarm_l);
-	BoneMap.Add(13, lowerarm_r);
-	BoneMap.Add(14, lowerarm_l);
-	BoneMap.Add(15, hand_r);
-	BoneMap.Add(16, hand_l);
+	BoneMap.Add(12, upperarm_r);
+	BoneMap.Add(11, upperarm_l);
+	BoneMap.Add(14, lowerarm_r);
+	BoneMap.Add(13, lowerarm_l);
+	BoneMap.Add(16, hand_r);
+	BoneMap.Add(15, hand_l);
 	BoneMap.Add(23, thigh_r);
 	BoneMap.Add(24, thigh_l);
 	BoneMap.Add(25, calf_r);
