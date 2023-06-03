@@ -132,9 +132,9 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("z") * -1;
-					float Y = LandmarkObject->GetNumberField("x") ;
-					float Z = (LandmarkObject->GetNumberField("y") * -1) + 2.0f;
+					float X = LandmarkObject->GetNumberField("x") ;
+					float Y = LandmarkObject->GetNumberField("z") * -1;
+					float Z = LandmarkObject->GetNumberField("y") * -1 ;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
 
 					LandmarkVectors[Num] = FVector(X, Y, Z);
@@ -161,8 +161,8 @@ void AMyCharacter::UpdateBoneTree()
 {
 	FVector ShoulderCenter = (LandmarkVectors[12] + LandmarkVectors[11]) / 2;
 	FVector HipCenter = (LandmarkVectors[24] + LandmarkVectors[23]) / 2;
-	EstimatedPelvis = (ShoulderCenter - HipCenter) + HipCenter * 0.1;
-	EsitmatedSpine_03 = (ShoulderCenter - HipCenter) + HipCenter * 0.8;
+	EstimatedPelvis = ShoulderCenter * 0.4 + HipCenter  * 0.6;
+	EsitmatedSpine_03 = ShoulderCenter * 0.8 + HipCenter * 0.2;
 
 	UBoneTree* CurrentBone = nullptr;
 
@@ -180,12 +180,13 @@ void AMyCharacter::UpdateBoneTree()
 				CurrentBone->SetLandmarkVector(EstimatedPelvis);
 
 				FString string = EstimatedPelvis.ToString();
-				GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("bond 33:%d"), *string));
+				//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("bond 33:%d"), *string));
 				
 			}
 			else if (i == 34)
 			{
 				CurrentBone->SetLandmarkVector(EsitmatedSpine_03);
+				CurrentBone->SetRelativeVector();
 			}
 			else
 			{
@@ -244,7 +245,7 @@ void AMyCharacter::BeginPlay()
 void AMyCharacter::Tick(float DeltaTime)
 {
 	UBoneTree* Pelvis = BoneMap.FindRef(33);
-	DrawDebugBones(BoneRoot, {0,0,0});
+	DrawDebugBones(BoneRoot, BoneRoot->GetLandmarkVector());
 
 	if (LandmarksUpdated)
 	{
@@ -318,22 +319,36 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 		const float Radius = 10.0f;
 		const FColor Color = FColor::Red;
 		const float LifeTime = 0.3f;
+		FVector BonePosition = FVector(0, 0, 0);
 
-		FVector BonePosition = ParentPosition + Bone->GetRelativeVector() * 100;
+		if (Bone->GetParent() != nullptr)
+		{
+			BonePosition = ParentPosition + Bone->GetRelativeVector() * 100;
 
-		DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
+			DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
 
-		// 로테이션 값을 방향 벡터로 변환
-		FVector Direction = Bone->GetRelativeVector();
-		FRotator tmpDirection2 = Bone->GetAdjacentRotation();
-		FVector DirectionVector = tmpDirection2.Vector();
+			// 로테이션 값을 방향 벡터로 변환
+			FVector Direction = Bone->GetRelativeVector();
+			FRotator tmpDirection2 = Bone->GetAdjacentRotation();
+			FVector DirectionVector = tmpDirection2.Vector();
+
+
+
+			// 디버그 라인 그리기
+			FVector LineEnd = BonePosition - Direction * 100.0f;
+			DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
+
+			
+		}
+		else
+		{
+			BonePosition = Bone->GetLandmarkVector();
+			DrawDebugPoint(World, BonePosition, Radius, FColor::Green, false, LifeTime);
+			
+	
+		}
 
 		
-
-		// 디버그 라인 그리기
-		FVector LineEnd = BonePosition - Direction * 100.0f;
-		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
-
 		// 자식 본들에 대해 재귀적으로 호출
 		for (UBoneTree* Child : Bone->GetChildren())
 		{
