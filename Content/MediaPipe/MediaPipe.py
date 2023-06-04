@@ -41,7 +41,7 @@ def main():
                 # 랜드마크 정보 전송
                 if results.pose_landmarks:
                     landmarks = results.pose_landmarks.landmark
-                    targetdata = {10, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26 ,27, 28, 29, 30, 31, 32}
+                    targetdata = {10, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26 ,27, 28}
                     landmark_data = [{'Num' : l,'x': landmarks[l].x, 'y': landmarks[l].y, 'z': landmarks[l].z, 'visibility': landmarks[l].visibility} for l in targetdata]
                     #landmark_data = [{'x': landmarks[10].x, 'y': landmarks[10].y, 'z': landmarks[10].z, 'visibility': landmarks[10].visibility}]
                     client_socket.sendall(json.dumps(landmark_data).encode('utf-8'))
