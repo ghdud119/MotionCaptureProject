@@ -6,6 +6,8 @@
 #include "SocketSubsystem.h"
 #include "JsonUtilities/Public/JsonObjectConverter.h"
 #include "BoneTree.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AMyCharacter::AMyCharacter()
 {
@@ -62,7 +64,58 @@ void AMyCharacter::Disconnect()
 		Socket = nullptr;
 	}
 }
+void AMyCharacter::GmGetAllSocketNames()
+{
+    TArray<FName> a = GetMesh()->GetAllSocketNames();
+      
+    GmAllSockets.Empty(0);
+      
+    for (auto Element : a)
+    {
+        GmAllSockets.AddUnique(Element);
+    }
 
+    CurAISkeletalMesh = Cast<AMyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), RefAIClass))->GetMesh();
+
+}
+
+bool AMyCharacter::GmCompareValues(float ErrorT)
+{
+        bool bResult = true;
+	
+	FTransform CurRootTransform;
+	FTransform CurRootTransform2;
+	FVector OutVec;
+	FVector OutVec2;
+	
+	for (auto bone : BoneNameArr)
+	{
+		CurRootTransform = GetMesh()->GetSocketTransform(bone, RTS_ParentBoneSpace);
+		CurRootTransform2 = CurAISkeletalMesh->GetSocketTransform(bone, RTS_ParentBoneSpace);
+		OutVec = CurRootTransform.GetLocation();
+		OutVec2 = CurRootTransform2.GetLocation();
+
+		if (FVector::Dist(OutVec, OutVec2) > 5.5f)
+		{
+			bResult = false;
+			LOG_SCREEN("%s : false", *bone.ToString());
+		}
+		
+	}
+
+	
+	
+	if (bResult)
+	{
+		Score = FMath::Clamp(Score + 1.0f, 0.0f, 100.0f);
+	}
+	else
+	{
+		Score = FMath::Clamp(Score - 0.5f, 0.0f, 100.0f);
+	}
+	
+    return bResult;
+}
 bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 {
 	if (Socket)
@@ -87,9 +140,9 @@ bool AMyCharacter::ReceiveData(TArray<float>& OutData)
 					TSharedPtr<FJsonObject> LandmarkObject = JsonValue->AsObject();
 
 					int32 Num = LandmarkObject->GetIntegerField("Num");
-					float X = LandmarkObject->GetNumberField("y") * -1;
-					float Y = LandmarkObject->GetNumberField("x");
-					float Z = LandmarkObject->GetNumberField("z") - -1;
+					float X = LandmarkObject->GetNumberField("x") ;
+					float Y = LandmarkObject->GetNumberField("z") * -1;
+					float Z = LandmarkObject->GetNumberField("y") * -1 ;
 					float Visibility = LandmarkObject->GetNumberField("visibility");
 
 					LandmarkVectors[Num] = FVector(X, Y, Z);
@@ -116,13 +169,16 @@ void AMyCharacter::UpdateBoneTree()
 {
 	FVector ShoulderCenter = (LandmarkVectors[12] + LandmarkVectors[11]) / 2;
 	FVector HipCenter = (LandmarkVectors[24] + LandmarkVectors[23]) / 2;
-	EstimatedPelvis = (ShoulderCenter - HipCenter) + HipCenter * 0.1;
-	EsitmatedSpine_03 = (ShoulderCenter - HipCenter) + HipCenter * 0.8;
+	EstimatedPelvis = ShoulderCenter * 0.4 + HipCenter  * 0.6;
+	EsitmatedSpine_03 = ShoulderCenter * 0.8 + HipCenter * 0.2;
 
 	UBoneTree* CurrentBone = nullptr;
 
-	for (int i = 0; i < LandmarkVectors.Num(); i++)
+	for (int i = 0; i < (LandmarkVectors.Num() + 2); i++)
 	{
+
+
+
 		CurrentBone = BoneMap.FindRef(i);
 
 		if (CurrentBone)
@@ -130,35 +186,50 @@ void AMyCharacter::UpdateBoneTree()
 			if (i == 33)
 			{
 				CurrentBone->SetLandmarkVector(EstimatedPelvis);
+
+				FString string = EstimatedPelvis.ToString();
+				//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("bond 33:%d"), *string));
+				
 			}
 			else if (i == 34)
 			{
 				CurrentBone->SetLandmarkVector(EsitmatedSpine_03);
+				CurrentBone->SetRelativeVector();
 			}
 			else
 			{
 				CurrentBone->SetLandmarkVector(LandmarkVectors[i]);
+				CurrentBone->SetRelativeVector();
+				
 			}
 
-			CurrentBone->SetRelativeVector();
-
+			
 			UBoneTree* ParentBone = CurrentBone->GetParent();
+			
 			TArray<UBoneTree*> ChildBone = CurrentBone->GetChildren();
 
-			if (ParentBone && 0 < ChildBone.Num())
+			if (ParentBone && i != 33 && i != 34 )
 			{
-				FRotator AdjacentRotation = GetRotatorfromVector(
+				if (i == 11 || i == 12)
+				{
+					/*FRotator AdjacentRotation = GetRotatorfromVector(
+						ShoulderCenter,
+						CurrentBone->GetLandmarkVector(),
+						ChildBone[0]->GetLandmarkVector());*/
+				}
+
+
+				/*FRotator AdjacentRotation = GetRotatorfromVector(
 					ParentBone->GetLandmarkVector(),
 					CurrentBone->GetLandmarkVector(),
 					ChildBone[0]->GetLandmarkVector()
-				);
+				);*/
 
-				if (i == 11)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("Bone11 : %s"), *AdjacentRotation.ToString()));
-				}
 
-				CurrentBone->SetAdjacentRotation(AdjacentRotation);
+				FRotator AdjacentRotation = GetRotatorfromRelativeVector(CurrentBone->GetRelativeVector());
+				
+
+				CurrentBone->GetParent()->SetAdjacentRotation(AdjacentRotation);
 			}
 		}
 		else
@@ -177,12 +248,18 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	BoneRoot = UBoneTree::BuildBoneTree(BoneMap);
+
+	BoneNameArr.Emplace(FName("neck_01"));
+	BoneNameArr.Emplace(FName("foot_l"));
+	BoneNameArr.Emplace(FName("foot_r"));
+	BoneNameArr.Emplace(FName("hand_l"));
+	BoneNameArr.Emplace(FName("hand_r"));
 }
 
 void AMyCharacter::Tick(float DeltaTime)
 {
 	UBoneTree* Pelvis = BoneMap.FindRef(33);
-	DrawDebugBones(BoneRoot, {0,0,0});
+	DrawDebugBones(BoneRoot, BoneRoot->GetLandmarkVector());
 
 	if (LandmarksUpdated)
 	{
@@ -200,48 +277,40 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
+void AMyCharacter::PlayAIMontage(UAnimMontage* AnyMtg)
+{
+    PlayAnimMontage(AnyMtg);
+}
+double AMyCharacter::TestFunc(FVector AnyVA, FVector AnyVB)
+{    double RstA = AnyVA.Size();
+    double RstB = AnyVB.Size();
+
+    double Result;
+    return Result = RstA>RstB ? RstB-RstA : RstA-RstB;
+    
+}
 
 FRotator AMyCharacter::GetRotatorfromVector(FVector StartVector, FVector JointVector, FVector EndVector)
 {
-	FVector tmpStarttoJoint = StartVector - JointVector;
-	FVector tmpJointtoEnd = EndVector - JointVector;
+	FVector StarttoJoint = JointVector - StartVector;
+	FVector JointtoEnd = EndVector - JointVector;
 
-	FVector StarttoJoint = ChangeCoordinate(tmpStarttoJoint);
-	FVector JointtoEnd = ChangeCoordinate(tmpJointtoEnd);
+	StarttoJoint.Normalize();
+	JointtoEnd.Normalize();
 
-	//below this is old thing.. 
-	////this is for  X - axis Rotator angle calculator
-	//FVector tmp1 = StarttoJoint;
-	//tmp1.X = 0.0f;
-	//FVector tmp2 = JointtoEnd;
-	//tmp2.X = 0.0f;
 
-	//float cosineX = FVector::DotProduct(tmp1, tmp2) / tmp1.Size() * tmp2.Size();
-	//float RotatorX = FMath::RadiansToDegrees(FMath::Acos(cosineX));
-
-	////this is for  Y - axis Rotator angle calculator
-	//FVector tmp3 = StarttoJoint;
-	//tmp3.Y = 0.0f;
-	//FVector tmp4 = JointtoEnd;
-	//tmp4.Y = 0.0f;
-
-	//float cosineY = FVector::DotProduct(tmp3, tmp4) / tmp3.Size() * tmp4.Size();
-	//float RotatorY = FMath::RadiansToDegrees(FMath::Acos(cosineY));
-
-	////this is for  Z - axis Rotator angle calculator
-	//FVector tmp5 = StarttoJoint;
-	//tmp5.Z = 0.0f;
-	//FVector tmp6 = JointtoEnd;
-	//tmp6.Z = 0.0f;
-
-	//float cosineZ = FVector::DotProduct(tmp5, tmp6) / tmp5.Size() * tmp6.Size();
-	//float RotatorZ = FMath::RadiansToDegrees(FMath::Acos(cosineZ));
-	
-	/*maybe this is right thing.. you have to change coordinate transformation*/
 	FRotator Rotator = JointtoEnd.Rotation();
+	//FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(StarttoJoint, JointtoEnd);
 
 
 
+
+	return Rotator;
+}
+
+FRotator AMyCharacter::GetRotatorfromRelativeVector(FVector RelatedfromParents)
+{
+	FRotator Rotator = RelatedfromParents.Rotation();
 
 	return Rotator;
 }
@@ -264,19 +333,37 @@ void AMyCharacter::DrawDebugBones(UBoneTree* Bone, const FVector& ParentPosition
 		const float Radius = 10.0f;
 		const FColor Color = FColor::Red;
 		const float LifeTime = 0.3f;
+		FVector BonePosition = FVector(0, 0, 0);
 
-		FVector BonePosition = ParentPosition + Bone->GetRelativeVector() * 100;
+		if (Bone->GetParent() != nullptr)
+		{
+			BonePosition = ParentPosition + Bone->GetRelativeVector() * 100;
 
-		DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
+			DrawDebugPoint(World, BonePosition, Radius, Color, false, LifeTime);
 
-		// ∑Œ≈◊¿Ãº« ∞™¿ª πÊ«‚ ∫§≈Õ∑Œ ∫Ø»Ø
-		FVector Direction = Bone->GetRelativeVector();
+			// Î°úÌÖåÏù¥ÏÖò Í∞íÏùÑ Î∞©Ìñ• Î≤°ÌÑ∞Î°ú Î≥ÄÌôò
+			FVector Direction = Bone->GetRelativeVector();
+			FRotator tmpDirection2 = Bone->GetAdjacentRotation();
+			FVector DirectionVector = tmpDirection2.Vector();
 
-		// µπˆ±◊ ∂Û¿Œ ±◊∏Æ±‚
-		FVector LineEnd = BonePosition + Direction * 100.0f; 
-		DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
 
-		// ¿⁄Ωƒ ∫ªµÈø° ¥Î«ÿ ¿Á±Õ¿˚¿∏∑Œ »£√‚
+
+			// ÎîîÎ≤ÑÍ∑∏ ÎùºÏù∏ Í∑∏Î¶¨Í∏∞
+			FVector LineEnd = BonePosition - Direction * 100.0f;
+			DrawDebugLine(World, BonePosition, LineEnd, FColor::Blue, false, LifeTime);
+
+			
+		}
+		else
+		{
+			BonePosition = Bone->GetLandmarkVector();
+			DrawDebugPoint(World, BonePosition, Radius, FColor::Green, false, LifeTime);
+			
+	
+		}
+
+		
+		// ÏûêÏãù Î≥∏Îì§Ïóê ÎåÄÌï¥ Ïû¨Í∑ÄÏ†ÅÏúºÎ°ú Ìò∏Ï∂ú
 		for (UBoneTree* Child : Bone->GetChildren())
 		{
 			DrawDebugBones(Child, BonePosition);
@@ -295,7 +382,7 @@ void AMyCharacter::DebugPrintDataToFile()
 	// Convert the current time to string
 	FString Timestamp = Now.ToString();
 
-	// ∑£µÂ∏∂≈© ∫§≈Õ∏¶ ¿˙¿Â«œ¥¬ ∑Á«¡
+	// ÎûúÎìúÎßàÌÅ¨ Î≤°ÌÑ∞Î•º Ï†ÄÏû•ÌïòÎäî Î£®ÌîÑ
 	for (int i = 0; i < LandmarkVectors.Num(); i++)
 	{
 		FVector LandmarkVector = LandmarkVectors[i];
@@ -325,7 +412,6 @@ void AMyCharacter::DebugPrintDataToFile()
 		}
 	}
 
-	// ≈ÿΩ∫∆Æ∏¶ ∆ƒ¿œ∑Œ ¿˙¿Â
-	FFileHelper::SaveStringToFile(Content, TEXT("D:\\Desktop\\LandmarkVectorsData.txt"));
+	// ÌÖçÏä§Ìä∏Î•º ÌååÏùºÎ°ú Ï†ÄÏû•
+	FFileHelper::SaveStringToFile(Content, TEXT("D:\\study-git\\debug\\LandmarkVectorsData.txt"));
 }
-
