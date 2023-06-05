@@ -81,31 +81,39 @@ void AMyCharacter::GmGetAllSocketNames()
 
 bool AMyCharacter::GmCompareValues(float ErrorT)
 {
-    bool bResult = true;
-    
-    if(!GmAllSockets.IsEmpty())
-    {
-        FTransform CurRootTransform = GetMesh()->GetSocketTransform(GmAllSockets[0], RTS_World);
-        FTransform CurRootTransform2 = CurAISkeletalMesh->GetSocketTransform(GmAllSockets[0], RTS_World);
-        
-        for (int i = 1;  i < GmAllSockets.Num() - 1; i++)
-        {
-            FVector OutVec;
-            FRotator OutRot;
-            GetMesh()->TransformToBoneSpace(GmAllSockets[i], CurRootTransform.GetLocation(), CurRootTransform.Rotator(), OutVec, OutRot);
+        bool bResult = true;
+	
+	FTransform CurRootTransform;
+	FTransform CurRootTransform2;
+	FVector OutVec;
+	FVector OutVec2;
+	
+	for (auto bone : BoneNameArr)
+	{
+		CurRootTransform = GetMesh()->GetSocketTransform(bone, RTS_ParentBoneSpace);
+		CurRootTransform2 = CurAISkeletalMesh->GetSocketTransform(bone, RTS_ParentBoneSpace);
+		OutVec = CurRootTransform.GetLocation();
+		OutVec2 = CurRootTransform2.GetLocation();
 
-        
-            FVector OutVec2;
-            FRotator OutRot2;
-            CurAISkeletalMesh->TransformToBoneSpace(GmAllSockets[i], CurRootTransform2.GetLocation(), CurRootTransform2.Rotator(), OutVec2, OutRot2);
+		if (FVector::Dist(OutVec, OutVec2) > 5.5f)
+		{
+			bResult = false;
+			LOG_SCREEN("%s : false", *bone.ToString());
+		}
+		
+	}
 
-            if (!FMath::IsNearlyEqual(OutVec.Size()+OutRot.Vector().Size(), OutVec2.Size()+OutRot2.Vector().Size(), ErrorT))
-            {
-                bResult = false;
-            }
-        }
-    }
-
+	
+	
+	if (bResult)
+	{
+		Score = FMath::Clamp(Score + 1.0f, 0.0f, 100.0f);
+	}
+	else
+	{
+		Score = FMath::Clamp(Score - 0.5f, 0.0f, 100.0f);
+	}
+	
     return bResult;
 }
 bool AMyCharacter::ReceiveData(TArray<float>& OutData)
@@ -240,6 +248,12 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	BoneRoot = UBoneTree::BuildBoneTree(BoneMap);
+
+	BoneNameArr.Emplace(FName("neck_01"));
+	BoneNameArr.Emplace(FName("foot_l"));
+	BoneNameArr.Emplace(FName("foot_r"));
+	BoneNameArr.Emplace(FName("hand_l"));
+	BoneNameArr.Emplace(FName("hand_r"));
 }
 
 void AMyCharacter::Tick(float DeltaTime)
@@ -401,4 +415,3 @@ void AMyCharacter::DebugPrintDataToFile()
 	// 텍스트를 파일로 저장
 	FFileHelper::SaveStringToFile(Content, TEXT("D:\\study-git\\debug\\LandmarkVectorsData.txt"));
 }
-

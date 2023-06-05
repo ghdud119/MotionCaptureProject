@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
+#define	LOG_SCREEN(Format, ...) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(Format), ##__VA_ARGS__))
+
 class UBoneTree;
 
 UCLASS()
@@ -139,7 +141,8 @@ public:
 
 	//for Debug Print
 	void DebugPrintDataToFile();
-	
+	float Score = 0.0f;
+	TArray<FName> BoneNameArr;
 
 private:
 	FSocket* Socket = nullptr;
