@@ -95,7 +95,7 @@ bool AMyCharacter::GmCompareValues(float ErrorT)
 		OutVec = CurRootTransform.GetLocation();
 		OutVec2 = CurRootTransform2.GetLocation();
 
-		if (FVector::Dist(OutVec, OutVec2) > 5.5f)
+		if (FVector::Dist(OutVec, OutVec2) > 6.2f)
 		{
 			bResult = false;
 			LOG_SCREEN("%s : false", *bone.ToString());
